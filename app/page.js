@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 export default function SlotMachine() {
@@ -17,45 +17,79 @@ export default function SlotMachine() {
     "/animals/puppy.png",
   ];
 
-  const [slot1, setSlot1] = useState(null);
-  const [slot2, setSlot2] = useState(null);
-  const [slot3, setSlot3] = useState(null);
-
-  const [isRolling, setIsRolling] = useState(false);
+  const [reels, setReels] = useState([null, null, null]);
+  const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState("");
+  const [coins, setCoins] = useState(20);
+  const [reelOffsets, setReelOffsets] = useState([0, 0, 0]);
 
-  const roll = () => {
-    if (isRolling) return; // prevent spamming
-    setIsRolling(true);
+  const REEL_SPEED = 25; // lower = faster spin
+
+  const spin = () => {
+    if (spinning || coins <= 0) return;
+
+    setCoins(coins - 1); // cost to spin
     setMessage("");
+    setSpinning(true);
 
-    // Clear slots before rolling
-    setSlot1(null);
-    setSlot2(null);
-    setSlot3(null);
+    // Random final results
+    const final1 = animals[Math.floor(Math.random() * animals.length)];
+    const final2 = animals[Math.floor(Math.random() * animals.length)];
+    const final3 = animals[Math.floor(Math.random() * animals.length)];
 
-    // Randomizer helper
-    const pick = () => animals[Math.floor(Math.random() * animals.length)];
+    // Reset reels to spinning motion
+    const interval = setInterval(() => {
+      setReelOffsets((prev) => [
+        prev[0] + REEL_SPEED,
+        prev[1] + REEL_SPEED,
+        prev[2] + REEL_SPEED,
+      ]);
+    }, 50);
 
-    // Reveal slots one at a time
-    setTimeout(() => setSlot1(pick()), 600);
-    setTimeout(() => setSlot2(pick()), 1200);
-    setTimeout(() => setSlot3(pick()), 1800);
-
-    // After all finished
+    // Stop reels one at a time
     setTimeout(() => {
-      setIsRolling(false);
+      stopReel(0, final1);
+    }, 1000);
 
-      // Win checker
-      setTimeout(() => {
-        if (slot1 && slot1 === slot2 && slot2 === slot3) {
-          setMessage("🎉 You win! Three in a row! 🎉");
-        } else {
-          setMessage("Try again!");
-        }
-      }, 100);
-    }, 2000);
+    setTimeout(() => {
+      stopReel(1, final2);
+    }, 1600);
+
+    setTimeout(() => {
+      stopReel(2, final3);
+      clearInterval(interval);
+    }, 2200);
   };
+
+  const stopReel = (index, finalAnimal) => {
+    setReels((prev) => {
+      const newReels = [...prev];
+      newReels[index] = finalAnimal;
+      return newReels;
+    });
+  };
+
+  // After all reels stop, check win
+  useEffect(() => {
+    if (reels.every((r) => r !== null)) {
+      setSpinning(false);
+
+      const [a, b, c] = reels;
+      if (a === b && b === c) {
+        setMessage("🎉 You won! +10 coins 🎉");
+        setCoins((coins) => coins + 10);
+      } else {
+        setMessage("Try again!");
+      }
+    }
+  }, [reels]);
+
+  // Reset reels visually when spinning starts
+  useEffect(() => {
+    if (spinning) {
+      setReels([null, null, null]);
+    }
+  }, [spinning]);
 
   return (
     <div
@@ -64,97 +98,109 @@ export default function SlotMachine() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#fef7ea",
+        background: "#fff8e5",
         padding: "2rem",
       }}
     >
       <div
         style={{
           background: "white",
-          borderRadius: "20px",
           padding: "2rem",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+          borderRadius: "20px",
+          width: "340px",
           textAlign: "center",
-          width: "320px",
+          boxShadow: "0 10px 35px rgba(0,0,0,0.15)",
         }}
       >
         <h1 style={{ fontSize: "1.6rem", marginBottom: "1rem" }}>
           🐾 Cute Slot Machine 🐾
         </h1>
 
+        <p style={{ marginBottom: "1rem", fontSize: "1.1rem" }}>
+          Coins: <strong>{coins}</strong>
+        </p>
+
+        {/* Reel Container */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             marginBottom: "1.5rem",
+            position: "relative",
           }}
         >
-          {/* SLOT */}
-          {[slot1, slot2, slot3].map((slot, i) => (
+          {[0, 1, 2].map((i) => (
             <div
               key={i}
               style={{
                 width: "80px",
                 height: "80px",
-                borderRadius: "12px",
-                background: "#fff3da",
-                border: "3px solid #ffd9a5",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
                 overflow: "hidden",
-                animation: slot ? "pop 0.3s ease" : "",
+                borderRadius: "12px",
+                border: "3px solid #ffd9a5",
+                background: "#fff3da",
+                position: "relative",
               }}
             >
-              {slot && (
-                <Image
-                  src={slot}
-                  alt="animal"
-                  width={70}
-                  height={70}
-                  style={{ objectFit: "contain" }}
-                />
-              )}
+              {/* Reel strip */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: spinning ? -(reelOffsets[i] % (animals.length * 75)) : 0,
+                  transition: spinning ? "none" : "transform 0.3s ease",
+                }}
+              >
+                {spinning
+                  ? [...Array(10)].map((_, idx) => (
+                      <Image
+                        key={idx}
+                        src={animals[idx % animals.length]}
+                        width={70}
+                        height={70}
+                        alt="spin"
+                        style={{ marginBottom: "5px" }}
+                      />
+                    ))
+                  : reels[i] && (
+                      <Image
+                        src={reels[i]}
+                        width={70}
+                        height={70}
+                        alt="animal"
+                      />
+                    )}
+              </div>
             </div>
           ))}
         </div>
 
         <button
-          onClick={roll}
-          disabled={isRolling}
+          onClick={spin}
+          disabled={spinning || coins <= 0}
           style={{
-            background: isRolling ? "#ccc" : "#ffb347",
-            color: "white",
-            fontWeight: "bold",
+            width: "100%",
             padding: "0.8rem 1.2rem",
+            background: spinning || coins <= 0 ? "#ccc" : "#ffad4a",
+            color: "white",
             border: "none",
             borderRadius: "12px",
-            cursor: isRolling ? "not-allowed" : "pointer",
-            width: "100%",
             fontSize: "1rem",
+            fontWeight: "bold",
+            cursor: spinning || coins <= 0 ? "not-allowed" : "pointer",
             transition: "0.2s",
           }}
         >
-          {isRolling ? "Rolling..." : "Spin!"}
+          {coins <= 0
+            ? "Out of Coins!"
+            : spinning
+            ? "Spinning..."
+            : "Spin (1 coin)"}
         </button>
 
         {message && (
           <p style={{ marginTop: "1rem", fontSize: "1.1rem" }}>{message}</p>
         )}
       </div>
-
-      <style jsx>{`
-        @keyframes pop {
-          0% {
-            transform: scale(0.6);
-            opacity: 0;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }
