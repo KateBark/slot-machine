@@ -5,11 +5,15 @@ import Image from "next/image";
 
 export default function SlotMachine() {
   const animals = [
-    "/animals/cat.png",
-    "/animals/dog.png",
-    "/animals/panda.png",
+    "/animals/birde.png",
     "/animals/bunny.png",
+    "/animals/fishie.png",
     "/animals/fox.png",
+    "/animals/hamster.png",
+    "/animals/hedgehog.png",
+    "/animals/kitty.png",
+    "/animals/koala.png",
+    "/animals/puppy.png",
   ];
 
   const [slot1, setSlot1] = useState(null);
