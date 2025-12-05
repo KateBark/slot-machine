@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function SlotMachine() {
   const animals = [
-    "/animals/birde.png",
+    "/animals/birdie.png",
     "/animals/bunny.png",
     "/animals/fishie.png",
     "/animals/fox.png",
@@ -13,6 +13,7 @@ export default function SlotMachine() {
     "/animals/hedgehog.png",
     "/animals/kitty.png",
     "/animals/koala.png",
+    "/animals/panda.png",
     "/animals/puppy.png",
   ];
 
