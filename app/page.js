@@ -113,7 +113,7 @@ export default function SlotMachine() {
         }}
       >
         <h1 style={{ fontSize: "1.6rem", marginBottom: "1rem" }}>
-          🐾 Cute Slot Machine 🐾
+          🐾 Snuggly Spins 🐾
         </h1>
 
         <p style={{ marginBottom: "1rem", fontSize: "1.1rem" }}>
